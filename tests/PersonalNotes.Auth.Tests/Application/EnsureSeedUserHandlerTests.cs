@@ -23,16 +23,32 @@ namespace PersonalNotes.Auth.Tests.Application
         }
 
         [Fact]
-        public async Task DoesNotTouchAnExistingUserWithAValidPassword()
+        public async Task DoesNotTouchAnExistingUser_WhenTheConfiguredHashIsTheSame()
         {
             var fx = new AuthFixture();
             var original = fx.User.Password;
 
-            var changed = await HandlerFor(fx).Handle(
-                new EnsureSeedUserCommand(AuthFixture.Username, "x", fx.Hasher.HashPassword("otra-clave")), default);
+            var changed = await HandlerFor(fx).Handle(new EnsureSeedUserCommand(AuthFixture.Username, "x", original), default);
 
             Assert.False(changed);
             Assert.Equal(original, fx.User.Password);
+        }
+
+        [Fact]
+        public async Task SyncsAnExistingUserToTheConfiguredHash_EvenIfTheStoredOneIsAValidHashOfAnotherPassword()
+        {
+            // Así quedó en producción: el usuario se creó con el hash BCrypt de otra contraseña
+            var fx = new AuthFixture();
+            for (var i = 0; i < 4; i++)
+                fx.User.RegisterFailedPasswordAttempt(5, TimeSpan.FromMinutes(15), fx.Time.UtcNow);
+            var configured = fx.Hasher.HashPassword("nueva-clave");
+
+            var changed = await HandlerFor(fx).Handle(new EnsureSeedUserCommand(AuthFixture.Username, "x", configured), default);
+
+            Assert.True(changed);
+            Assert.True(fx.Hasher.VerifyPassword("nueva-clave", fx.User.Password));
+            Assert.False(fx.Hasher.VerifyPassword(AuthFixture.Password, fx.User.Password));
+            Assert.Equal(0, fx.User.PasswordLock.FailedAttempts);
         }
 
         [Fact]

@@ -98,7 +98,9 @@ Base `personal-notes-auth` (mismo cluster que las notas):
 | `refreshSessions` | `userId`, `token` (hash SHA256), `createdAt`, `expiresAt`, `isUsed`, `usedAt`, `revokedAt` | único `token`; `userId`; `expiresAt` |
 
 **Usuario inicial:** al arrancar se crea `SeedUser:Username` (`JoaquinMarquez`) con `SeedUser:PasswordHash` si no
-existe. Si ya existe no se toca: cambiar el hash en la configuración no reemplaza la contraseña guardada.
+existe; si ya existe y su contraseña guardada es distinta, se reemplaza por la configurada (y se limpian los
+intentos fallidos). No hay endpoint para cambiar la contraseña: para cambiarla, se genera un hash nuevo, se pone en
+`SeedUser__PasswordHash` y se reinicia el servicio.
 
 ## Configuración
 

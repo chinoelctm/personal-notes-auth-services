@@ -8,9 +8,9 @@ using PersonalNotes.Auth.Domain.Services;
 namespace PersonalNotes.Auth.Application.Commands.Users.EnsureSeed
 {
     /// <summary>
-    /// Crea el usuario inicial si no existe. A un usuario existente no le cambia una contraseña válida (así un
-    /// reinicio no deshace un cambio de contraseña), pero sí repara una guardada que no es un hash BCrypt: pasa
-    /// si un deploy arrancó con un valor equivocado en SeedUser__PasswordHash y con él no se podía entrar nunca.
+    /// Crea el usuario inicial si no existe y, si ya existe, le deja la contraseña de SeedUser:PasswordHash. No
+    /// hay endpoint para cambiar la contraseña: la configuración es la única fuente de verdad, así que cambiar
+    /// el hash en Render y reiniciar es la forma de cambiarla (o de recuperarla si un deploy guardó otra).
     /// </summary>
     public class EnsureSeedUserHandler : IRequestHandler<EnsureSeedUserCommand, bool>
     {
@@ -40,12 +40,13 @@ namespace PersonalNotes.Auth.Application.Commands.Users.EnsureSeed
             var existing = await _userRepository.GetByUsernameAsync(command.Username, ct);
             if (existing is not null)
             {
-                if (_passwordHashingService.IsPasswordHash(existing.Password))
+                if (existing.Password == command.PasswordHash)
                     return false;
 
+                // Limpia también los intentos fallidos y el bloqueo
                 existing.UpdatePassword(command.PasswordHash, now);
                 await _userRepository.UpdateAsync(existing, ct);
-                _logger.LogWarning("El usuario inicial {Username} tenía una contraseña guardada inválida; se reemplazó por SeedUser:PasswordHash.",
+                _logger.LogWarning("La contraseña del usuario inicial {Username} se actualizó desde SeedUser:PasswordHash.",
                     existing.Username);
                 return true;
             }
