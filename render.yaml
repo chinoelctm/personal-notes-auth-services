@@ -1,0 +1,25 @@
+# Blueprint de Render: crea el servicio de autenticación como Web Service gratuito usando el Dockerfile del repo.
+# Los secretos (conexión a Atlas, clave privada JWT y hash de la contraseña) se ingresan en el dashboard.
+services:
+  - type: web
+    name: personal-notes-auth-services
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    envVars:
+      # La imagen aspnet:8.0 escucha en 8080; Render enruta al puerto indicado en PORT
+      - key: PORT
+        value: "8080"
+      # La misma conexión de Atlas que personal-notes-service; otra base de datos
+      - key: ConnectionStrings__MongoUri
+        sync: false
+      - key: ConnectionStrings__MongoDb
+        value: personal-notes-auth
+      # Clave RSA privada (PEM) que firma los access tokens; su pública va en personal-notes-service
+      - key: JwtSettings__PrivateKeyPem
+        sync: false
+      # Hash BCrypt de la contraseña del usuario inicial (JoaquinMarquez); se crea al arrancar si no existe
+      - key: SeedUser__PasswordHash
+        sync: false
