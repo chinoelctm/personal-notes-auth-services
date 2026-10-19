@@ -98,9 +98,13 @@ namespace PersonalNotes.Auth.Api.Extensions
 
         private static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration)
         {
+            // Una clave inválida detiene el arranque con un mensaje claro, en vez de un 500 en cada request
             services.AddOptions<JwtOptions>()
                 .Bind(configuration.GetSection(JwtOptions.SectionName))
                 .ValidateDataAnnotations()
+                .Validate(o => string.IsNullOrWhiteSpace(o.PrivateKeyPem) || PemKeys.TryImportRsa(o.PrivateKeyPem, requirePrivateKey: true, out _),
+                    "JwtSettings:PrivateKeyPem no es una clave RSA privada válida en PEM. Copia el archivo jwt-private.pem completo, " +
+                    "incluidas las líneas -----BEGIN PRIVATE KEY----- y -----END PRIVATE KEY-----.")
                 .ValidateOnStart();
 
             services.AddSingleton<IJwtOptions>(sp =>

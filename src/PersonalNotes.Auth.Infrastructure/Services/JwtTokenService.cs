@@ -18,7 +18,7 @@ namespace PersonalNotes.Auth.Infrastructure.Services
         {
             _settings = settings;
             _passwordHashingService = passwordHashingService;
-            _rsaSecurityKey = CreateRsaSecurityKey(_settings.PrivateKeyPem);
+            _rsaSecurityKey = new RsaSecurityKey(PemKeys.ImportRsa(_settings.PrivateKeyPem, requirePrivateKey: true));
         }
 
         public string GenerateAccessToken(User user, int expirationMinutes)
@@ -56,18 +56,6 @@ namespace PersonalNotes.Auth.Infrastructure.Services
                 .TrimEnd('=');
 
             return (plainToken, _passwordHashingService.HashToken(plainToken));
-        }
-
-        private static RsaSecurityKey CreateRsaSecurityKey(string privateKeyPem)
-        {
-            if (string.IsNullOrWhiteSpace(privateKeyPem))
-                throw new InvalidOperationException("La clave privada JWT no está configurada.");
-
-            var rsa = RSA.Create();
-            // Render y los .env guardan el PEM en una línea con "\n" literales
-            rsa.ImportFromPem(privateKeyPem.Replace("\\n", "\n"));
-
-            return new RsaSecurityKey(rsa);
         }
     }
 }

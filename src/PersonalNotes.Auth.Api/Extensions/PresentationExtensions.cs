@@ -9,6 +9,7 @@ using PersonalNotes.Auth.Api.Cookies;
 using PersonalNotes.Auth.Api.Exceptions;
 using PersonalNotes.Auth.Api.Options;
 using PersonalNotes.Auth.Infrastructure.Options;
+using PersonalNotes.Auth.Infrastructure.Services;
 
 namespace PersonalNotes.Auth.Api.Extensions
 {
@@ -56,8 +57,7 @@ namespace PersonalNotes.Auth.Api.Extensions
             services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
                 .Configure<IOptions<JwtOptions>, IOptions<AuthCookieOptions>>((options, jwt, cookies) =>
                 {
-                    var rsa = RSA.Create();
-                    rsa.ImportFromPem(jwt.Value.PrivateKeyPem.Replace("\\n", "\n"));
+                    var rsa = PemKeys.ImportRsa(jwt.Value.PrivateKeyPem, requirePrivateKey: true);
                     var publicKey = new RsaSecurityKey(rsa.ExportParameters(includePrivateParameters: false));
 
                     options.MapInboundClaims = false;
