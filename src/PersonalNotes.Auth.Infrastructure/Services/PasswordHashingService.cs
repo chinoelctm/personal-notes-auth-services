@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using PersonalNotes.Auth.Domain.Services;
 
 namespace PersonalNotes.Auth.Infrastructure.Services
@@ -21,6 +22,11 @@ namespace PersonalNotes.Auth.Infrastructure.Services
                 return false;
             }
         }
+
+        public bool IsPasswordHash(string? value) => IsBcryptHash(value);
+
+        public static bool IsBcryptHash(string? value) =>
+            value is not null && Regex.IsMatch(value, @"^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$");
 
         // Los refresh tokens son aleatorios de 256 bits: basta SHA256 (BCrypt sería lento y no buscable)
         public string HashToken(string plainToken)

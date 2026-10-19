@@ -126,8 +126,13 @@ namespace PersonalNotes.Auth.Api.Extensions
             services.AddSingleton<ISessionOptions>(sp =>
                 sp.GetRequiredService<IOptions<SessionCleanupOptions>>().Value);
 
+            // Vacío se permite (no se crea el usuario), pero un valor que no es BCrypt detiene el arranque
             services.AddOptions<SeedUserOptions>()
-                .Bind(configuration.GetSection(SeedUserOptions.SectionName));
+                .Bind(configuration.GetSection(SeedUserOptions.SectionName))
+                .Validate(o => string.IsNullOrWhiteSpace(o.PasswordHash) || PasswordHashingService.IsBcryptHash(o.PasswordHash.Trim()),
+                    "SeedUser:PasswordHash no es un hash BCrypt ($2a$12$ seguido de 53 caracteres). Copia el contenido de " +
+                    "seed-password-hash.txt, no la contraseña ni la clave privada.")
+                .ValidateOnStart();
 
             return services;
         }

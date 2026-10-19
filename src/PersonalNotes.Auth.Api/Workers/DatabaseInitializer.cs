@@ -44,7 +44,7 @@ namespace PersonalNotes.Auth.Api.Workers
 
                     using var scope = _scopeFactory.CreateScope();
                     var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-                    await mediator.Send(new EnsureSeedUserCommand(_seedUser.Username, _seedUser.Name, _seedUser.PasswordHash),
+                    await mediator.Send(new EnsureSeedUserCommand(_seedUser.Username, _seedUser.Name, _seedUser.PasswordHash.Trim()),
                         stoppingToken);
                     return;
                 }
